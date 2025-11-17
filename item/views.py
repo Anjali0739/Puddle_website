@@ -1,8 +1,46 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Item
-from .forms import NewItemForm
+from .models import Category, Item
+from .forms import EditItemForm, NewItemForm
+from django.db.models import Q
+
+
 # Create your views here.
+
+
+def items(request):
+    items = Item.objects.filter(is_sold=False)
+    query = request.GET.get('query', '')
+
+    # If search is active, show only matched items
+    if query:
+        items = Item.objects.filter(
+            Q(name__icontains=query),
+            is_sold=False
+        ).select_related('category')
+
+        categories = Category.objects.all()
+
+        return render(request, "item/items.html", {
+            'categories': categories,
+            'items': items,
+            'query': query,
+            'is_search': True,
+        })
+
+    # If no search → normal category view
+    categories = Category.objects.prefetch_related('items').all()
+
+    return render(request, "item/items.html", {
+        'items': items,
+        'categories': categories,
+        'query': '',
+        'is_search': False,
+    })
+
+
+
+
 
 def detail(request, pk):
     item = get_object_or_404(Item, pk=pk)
@@ -33,4 +71,34 @@ def new(request):
     return render(request, 'item/form.html', {
         'form': form,
         'title': 'New item',
+    })
+
+
+
+@login_required
+def delete(request, pk):
+    item = get_object_or_404(Item, pk=pk, created_by=request.user)
+    item.delete()
+
+    return redirect('dashboard:index')
+
+
+
+@login_required
+def edit(request, pk):
+    item = get_object_or_404(Item, pk=pk, created_by=request.user)
+    if request.method == 'POST':
+        form = EditItemForm(request.POST, request.FILES, instance=item)
+
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.save()
+
+            return redirect('item:detail', pk=item.id)
+    else:
+        form = EditItemForm(instance=item)
+
+    return render(request, 'item/form.html', {
+        'form': form,
+        'title': 'Edit item',
     })
