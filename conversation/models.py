@@ -8,6 +8,7 @@ class Conversation(models.Model):
     members = models.ManyToManyField(User, related_name='conversations')
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+    anonymous_name = models.CharField(max_length=50, blank=True)
 
     class Meta:
         ordering = ('-modified_at',)
@@ -18,5 +19,5 @@ class ConversationMessage(models.Model):
     conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, related_name='conversation_messages', on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name='conversation_messages', on_delete=models.CASCADE,blank=True, null=True)
 
