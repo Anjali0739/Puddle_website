@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .forms import ConversationMessageForm
-from puddle.item.models import Item
+from item.models import Item
 from .models import Conversation
 # Create your views here.
 def new_conversation(request, item_pk):
